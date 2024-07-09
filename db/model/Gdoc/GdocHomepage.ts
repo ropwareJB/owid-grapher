@@ -67,6 +67,7 @@ export class GdocHomepage
         this.homepageMetadata = {
             chartCount: grapherCount + nonGrapherExplorerViewCount,
             topicCount: await db.getUniqueTopicCount(knex),
+            tagGraph: await db.generateTopicTagGraph(knex),
         }
 
         this.latestDataInsights = await db.getPublishedDataInsights(knex, 4)

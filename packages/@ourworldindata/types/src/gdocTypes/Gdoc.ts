@@ -17,6 +17,7 @@ import {
     DbEnrichedAuthor,
     DbEnrichedLatestWork,
 } from "../domainTypes/Author.js"
+import { TagGraphRoot } from "../domainTypes/ContentGraph.js"
 
 export enum OwidGdocPublicationContext {
     unlisted = "unlisted",
@@ -160,6 +161,7 @@ export interface OwidGdocHomepageContent {
 export interface OwidGdocHomepageMetadata {
     chartCount?: number
     topicCount?: number
+    tagGraph?: TagGraphRoot
 }
 
 export interface OwidGdocHomepageInterface extends OwidGdocBaseInterface {
