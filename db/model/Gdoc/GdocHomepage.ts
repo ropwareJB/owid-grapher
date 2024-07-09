@@ -12,7 +12,6 @@ import {
     OwidGdocBaseInterface,
     OwidGdocHomepageMetadata,
 } from "@ourworldindata/types"
-import { getUniqueTopicCount } from "../../../site/SiteNavigation.js"
 export class GdocHomepage
     extends GdocBase
     implements OwidGdocHomepageInterface
@@ -67,7 +66,7 @@ export class GdocHomepage
 
         this.homepageMetadata = {
             chartCount: grapherCount + nonGrapherExplorerViewCount,
-            topicCount: getUniqueTopicCount(),
+            topicCount: await db.getUniqueTopicCount(knex),
         }
 
         this.latestDataInsights = await db.getPublishedDataInsights(knex, 4)
