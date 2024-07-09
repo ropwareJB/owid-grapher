@@ -16,6 +16,7 @@ import { SiteLogos } from "./SiteLogos.js"
 import {
     CategoryWithEntries,
     OwidGdocType,
+    TagGraphRoot,
     getOwidGdocFromJSON,
 } from "@ourworldindata/utils"
 import { SiteResources } from "./SiteResources.js"
@@ -49,6 +50,16 @@ export const SiteNavigation = ({
 }) => {
     const [menu, setActiveMenu] = React.useState<Menu | null>(null)
     const [query, setQuery] = React.useState<string>("")
+    const [tagGraph, setTagGraph] = React.useState<TagGraphRoot | null>(null)
+
+    useEffect(() => {
+        const fetchTagGraph = async () => {
+            const response = await fetch("/headerMenu.json")
+            const tagGraph = await response.json()
+            setTagGraph(tagGraph)
+        }
+        if (!tagGraph) fetchTagGraph().catch(console.error)
+    }, [tagGraph, setTagGraph])
 
     const isActiveMobileMenu =
         menu !== null &&
@@ -125,7 +136,7 @@ export const SiteNavigation = ({
                                 <SiteMobileMenu
                                     menu={menu}
                                     toggleMenu={toggleMenu}
-                                    topics={SiteNavigationStatic.categories}
+                                    tagGraph={tagGraph}
                                     className="hide-sm-up"
                                 />
                             }
@@ -145,9 +156,7 @@ export const SiteNavigation = ({
                                         dropdown={
                                             <SiteNavigationTopics
                                                 onClose={closeOverlay}
-                                                topics={
-                                                    SiteNavigationStatic.categories
-                                                }
+                                                tagGraph={tagGraph}
                                                 className="hide-sm-only"
                                             />
                                         }
