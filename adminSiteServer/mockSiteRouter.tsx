@@ -493,6 +493,15 @@ getPlainRouteNonIdempotentWithRWTransaction(
     }
 )
 
+getPlainRouteWithROTransaction(
+    mockSiteRouter,
+    "/headerMenu.json",
+    async (req, res, trx) => {
+        const headerMenu = await db.generateSiteNav(trx)
+        res.send(headerMenu)
+    }
+)
+
 // TODO: this transaction is only RW because somewhere inside it we fetch images
 getPlainRouteNonIdempotentWithRWTransaction(
     mockSiteRouter,

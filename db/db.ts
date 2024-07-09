@@ -7,7 +7,7 @@ import {
     GRAPHER_DB_PORT,
 } from "../settings/serverSettings.js"
 import { registerExitHandler } from "./cleanup.js"
-import { keyBy } from "@ourworldindata/utils"
+import { createTagGraph, keyBy } from "@ourworldindata/utils"
 import {
     DbChartTagJoin,
     ImageMetadata,
@@ -23,6 +23,7 @@ import {
     FlatTagGraph,
     FlatTagGraphNode,
     MinimalTagWithIsTopic,
+    TagGraphRoot,
 } from "@ourworldindata/types"
 import { groupBy } from "lodash"
 
@@ -481,6 +482,7 @@ export async function getFlatTagGraph(knex: KnexReadonlyTransaction): Promise<
             tg.parentId,
             tg.childId,
             tg.weight,
+            t.slug,
             t.name,
             p.slug IS NOT NULL AS isTopic
         FROM
@@ -617,4 +619,24 @@ export function getMinimalTagsWithIsTopic(
             ],
         }
     )
+}
+
+export async function generateSiteNav(
+    knex: KnexReadonlyTransaction
+): Promise<TagGraphRoot> {
+    const { __rootId: rootId, ...parents } = await getFlatTagGraph(knex)
+
+    const tagGraphTopicsOnly = Object.entries(parents).reduce(
+        (acc: FlatTagGraph, [parentId, children]) => {
+            acc[Number(parentId)] = children.filter((child) => {
+                if (child.parentId === rootId) return true
+                return child.isTopic
+            })
+            return acc
+        },
+        {} as FlatTagGraph
+    )
+
+    // TODO: SDGs? need to exclude them from sitenav but have it as a tag to use for breadcrumbs
+    return createTagGraph(tagGraphTopicsOnly, rootId)
 }
