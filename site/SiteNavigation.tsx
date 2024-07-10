@@ -14,7 +14,6 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome/index.js"
 import { SiteNavigationTopics } from "./SiteNavigationTopics.js"
 import { SiteLogos } from "./SiteLogos.js"
 import {
-    CategoryWithEntries,
     OwidGdocType,
     TagGraphRoot,
     getOwidGdocFromJSON,
