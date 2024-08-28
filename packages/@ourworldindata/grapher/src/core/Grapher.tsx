@@ -811,7 +811,7 @@ export class Grapher
         if (this.isSlopeChart)
             return table.filterByTargetTimes([startTime, endTime])
 
-        return table.filterByTimeRange(startTime, endTime)
+        return table.filterByTimeRange(startTime, endTime).sortedByTime
     }
 
     @computed get transformedTable(): OwidTable {
