@@ -843,6 +843,7 @@ const parsePerson = (raw: RawBlockPerson): EnrichedBlockPerson => {
         image: raw.value.image,
         name: raw.value.name,
         title: raw.value.title,
+        url: extractUrl(raw.value.url),
         text: raw.value.text.map(parseText),
         socials: raw.value.socials?.map(parseSocialLink),
         parseErrors: [],
@@ -1394,6 +1395,7 @@ function parseCallout(raw: RawBlockCallout): EnrichedBlockCallout {
 
     return {
         type: "callout",
+        icon: raw.value.icon,
         parseErrors: [],
         text: excludeNullish(enrichedTextBlocks),
         title: raw.value.title,
