@@ -1,4 +1,4 @@
-import { get, groupBy } from "lodash"
+import { get, groupBy, pick } from "lodash"
 import { match, P } from "ts-pattern"
 import {
     ARCHVED_THUMBNAIL_FILENAME,
@@ -8,6 +8,8 @@ import {
     DbInsertPostGdocXImage,
     DbPlainTag,
     DbRawPostGdoc,
+    FlatTagGraph,
+    FlatTagGraphNode,
     GdocsContentSource,
     ImageMetadata,
     LatestDataInsight,
@@ -44,12 +46,17 @@ import {
     KnexReadWriteTransaction,
     getImageMetadataByFilenames,
     getPublishedGdocPostsWithTags,
+    getFlatTagGraph,
+    getParentTagsByChildName,
+    getBestBreadcrumbs,
 } from "../../db.js"
 import { enrichedBlocksToMarkdown } from "./enrichedToMarkdown.js"
 import { GdocAbout } from "./GdocAbout.js"
 import { GdocAuthor } from "./GdocAuthor.js"
 import { extractFilenamesFromBlock } from "./gdocUtils.js"
 import { getGdocComponentsWithoutChildren } from "./extractGdocComponentInfo.js"
+import { build } from "vite"
+import { BAKED_BASE_URL } from "../../../settings/clientSettings.js"
 
 export function gdocFromJSON(
     json: Record<string, any>
@@ -204,7 +211,20 @@ export async function getGdocBaseObjectById(
             [id]
         )
         gdoc.tags = tags
+
+        // Fetch default breadcrumbs if no manual overrides are specified
+        // (Currently only rendered in articles)
+        console.log("gdoc.breadcrumbs", gdoc.breadcrumbs)
+        if (!gdoc.breadcrumbs?.length) {
+            const allPathsByName = await getParentTagsByChildName(knex)
+
+            gdoc.breadcrumbs = await getBestBreadcrumbs(
+                gdoc.tags,
+                allPathsByName
+            )
+        }
     }
+
     return gdoc
 }
 
