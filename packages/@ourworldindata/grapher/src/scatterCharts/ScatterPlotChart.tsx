@@ -11,6 +11,7 @@ import {
     ColorSchemeName,
     ValueRange,
     ColumnSlug,
+    AxisAlign,
 } from "@ourworldindata/types"
 import { ComparisonLine } from "../scatterCharts/ComparisonLine"
 import { observable, computed, action } from "mobx"
@@ -365,6 +366,10 @@ export class ScatterPlotChart
         )
     }
 
+    @computed get axisBounds(): Bounds {
+        return this.innerBounds
+    }
+
     @computed private get canAddCountry(): boolean {
         const { addCountryMode } = this.manager
         return (addCountryMode &&
@@ -558,7 +563,7 @@ export class ScatterPlotChart
     @computed get dualAxis(): DualAxis {
         const { horizontalAxisPart, verticalAxisPart } = this
         return new DualAxis({
-            bounds: this.innerBounds,
+            bounds: this.axisBounds,
             horizontalAxis: horizontalAxisPart,
             verticalAxis: verticalAxisPart,
         })
@@ -1049,15 +1054,23 @@ export class ScatterPlotChart
 
     @computed private get yAxisConfig(): AxisConfig {
         const { yAxisConfig = {} } = this.manager
-        const labelPadding = this.manager.isNarrow ? 2 : undefined
-        const config = { ...yAxisConfig, labelPadding }
+        const labelPadding = this.manager.isNarrow ? 10 : undefined
+        const config = {
+            ...yAxisConfig,
+            labelPosition: AxisAlign.end,
+            labelPadding,
+        }
         return new AxisConfig(config, this)
     }
 
     @computed private get xAxisConfig(): AxisConfig {
         const { xAxisConfig = {} } = this.manager
-        const labelPadding = this.manager.isNarrow ? 2 : undefined
-        const config = { ...xAxisConfig, labelPadding }
+        const labelPadding = this.manager.isNarrow ? 8 : undefined
+        const config = {
+            ...xAxisConfig,
+            labelPosition: AxisAlign.end,
+            labelPadding,
+        }
         return new AxisConfig(config, this)
     }
 

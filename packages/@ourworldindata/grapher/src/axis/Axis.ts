@@ -42,6 +42,7 @@ interface TickLabelPlacement {
 type Scale = ScaleLinear<number, number> | ScaleLogarithmic<number, number>
 
 const OUTER_PADDING = 4
+const MAX_LABEL_WIDTH = 320
 
 const doIntersect = (bounds: Bounds, bounds2: Bounds): boolean => {
     return bounds.intersects(bounds2)
@@ -89,6 +90,8 @@ abstract class AbstractAxis {
     abstract get size(): number
     abstract get orient(): Position
     abstract get labelWidth(): number
+    abstract get labelPadding(): number
+    abstract get tickPadding(): number
 
     abstract placeTickLabel(value: number): TickLabelPlacement
     abstract get tickLabels(): TickLabelPlacement[]
@@ -101,8 +104,8 @@ abstract class AbstractAxis {
         return this.config.hideGridlines ?? false
     }
 
-    @computed get labelPadding(): number {
-        return this.config.labelPadding ?? 5
+    @computed get labelPosition(): AxisAlign {
+        return this.config.labelPosition ?? AxisAlign.middle
     }
 
     @computed get nice(): boolean {
@@ -511,14 +514,22 @@ export class HorizontalAxis extends AbstractAxis {
             : Position.bottom
     }
 
+    @computed get labelPadding(): number {
+        return this.config.labelPadding ?? 10
+    }
+
+    @computed get tickPadding(): number {
+        return this.config.tickPadding ?? 5
+    }
+
     @computed get labelOffset(): number {
         return this.labelTextWrap
-            ? this.labelTextWrap.height + this.labelPadding * 2
+            ? this.labelTextWrap.height + this.labelPadding
             : 0
     }
 
     @computed get labelWidth(): number {
-        return this.rangeSize
+        return Math.min(MAX_LABEL_WIDTH, this.rangeSize)
     }
 
     // note that we intentionally don't take `hideAxisLabels` into account here.
@@ -527,12 +538,10 @@ export class HorizontalAxis extends AbstractAxis {
     // we might end up with misaligned axes.
     @computed get height(): number {
         if (this.hideAxis) return 0
-        const { labelOffset, labelPadding } = this
+        const { labelOffset, tickPadding } = this
         const maxTickHeight = max(this.tickLabels.map((tick) => tick.height))
-        const height = maxTickHeight
-            ? maxTickHeight + labelOffset + labelPadding
-            : 0
-        return Math.max(height, this.config.minSize ?? 0)
+        const tickHeight = maxTickHeight ? maxTickHeight + tickPadding : 0
+        return Math.max(tickHeight + labelOffset, this.config.minSize ?? 0)
     }
 
     @computed get size(): number {
@@ -630,13 +639,23 @@ export class VerticalAxis extends AbstractAxis {
         return Position.left
     }
 
+    @computed get labelPadding(): number {
+        return this.config.labelPadding ?? 16
+    }
+
+    @computed get tickPadding(): number {
+        return this.config.tickPadding ?? 5
+    }
+
     @computed get labelWidth(): number {
-        return this.height
+        if (this.labelPosition === AxisAlign.middle) return this.height
+        const availableWidth = this.axisManager?.axisBounds?.width ?? Infinity
+        return Math.min(availableWidth, MAX_LABEL_WIDTH)
     }
 
     @computed get labelOffset(): number {
         return this.labelTextWrap
-            ? this.labelTextWrap.height + this.labelPadding * 2
+            ? this.labelTextWrap.height + this.labelPadding
             : 0
     }
 
@@ -646,13 +665,13 @@ export class VerticalAxis extends AbstractAxis {
     // we might end up with misaligned axes.
     @computed get width(): number {
         if (this.hideAxis) return 0
-        const { labelOffset, labelPadding } = this
+        const { tickPadding, labelPosition } = this
         const maxTickWidth = max(this.tickLabels.map((tick) => tick.width))
-        const width =
-            maxTickWidth !== undefined
-                ? maxTickWidth + labelOffset + labelPadding
-                : 0
-        return Math.max(width, this.config.minSize ?? 0)
+        const tickWidth =
+            maxTickWidth !== undefined ? maxTickWidth + tickPadding : 0
+        const labelOffset =
+            labelPosition === AxisAlign.middle ? this.labelOffset : 0
+        return Math.max(tickWidth + labelOffset, this.config.minSize ?? 0)
     }
 
     @computed get height(): number {
@@ -766,12 +785,23 @@ export class DualAxis {
         return axis.size
     }
 
+    @computed private get verticalAxisLabelOffset(): number {
+        return this.props.verticalAxis.labelPosition === AxisAlign.middle
+            ? 0
+            : this.props.verticalAxis.labelOffset
+    }
+
     // Now we can determine the "true" inner bounds of the dual axis
     @computed get innerBounds(): Bounds {
-        return this.bounds.pad({
-            [this.props.horizontalAxis.orient]: this.horizontalAxisSize,
-            [this.props.verticalAxis.orient]: this.verticalAxisSize,
-        })
+        return (
+            this.bounds
+                .pad({
+                    [this.props.horizontalAxis.orient]: this.horizontalAxisSize,
+                    [this.props.verticalAxis.orient]: this.verticalAxisSize,
+                })
+                // make space for the x-axis label if plotted above the axis
+                .padTop(this.verticalAxisLabelOffset)
+        )
     }
 
     @computed get bounds(): Bounds {
